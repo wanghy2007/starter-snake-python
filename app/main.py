@@ -2,6 +2,7 @@ import json
 import os
 import random
 import bottle
+import sys
 
 from api import ping_response, start_response, move_process, move_response, end_response
 
@@ -76,6 +77,6 @@ if __name__ == '__main__':
     bottle.run(
         application,
         host=os.getenv('IP', '0.0.0.0'),
-        port=os.getenv('PORT', '8080'),
+        port=os.getenv('PORT', sys.argv[1]),
         debug=os.getenv('DEBUG', True)
     )
