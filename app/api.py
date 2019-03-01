@@ -24,23 +24,23 @@ def start_response(color):
         })
     )
 
-def create_board(height, width, value):
+def _create_board(height, width, value):
     return [[value for x in range(width)] for y in range(height)]
 
-def populate_food(board, food):
+def _populate_food(board, food):
     for coord in food:
         x = coord['x']
         y = coord['y']
         board[y][x] = FOOD
 
-def extract_enemy_you(snakes, you):
+def _extract_enemy_you(snakes, you):
     enemy_snakes = []
     for snake in snakes:
         if snake['id'] != you['id']:
             enemy_snakes.append(snake)
     return [enemy_snakes, you]
 
-def populate_snakes(board, enemy_snakes, you_snake):
+def _populate_snakes(board, enemy_snakes, you_snake):
     for i in range(len(enemy_snakes)):
         snake_value = i+2
         snake_body = enemy_snakes[i]['body']
@@ -55,11 +55,11 @@ def populate_snakes(board, enemy_snakes, you_snake):
         y = coord['y']
         board[y][x] = YOU
 
-def calculate_distance(x, y, enemy_snake_heads):
+def _calculate_distance(x, y, enemy_snake_heads):
     distance_list = [abs(x-head['x'])+abs(y-head['y']) for head in enemy_snake_heads]
     return min(distance_list)
 
-def create_distance_matrix(height, width, enemy_snakes):
+def _create_distance_matrix(height, width, enemy_snakes):
     distance_matrix = [[width+height for x in range(width)] for y in range(height)]
     enemy_snake_heads = []
     for snake in enemy_snakes:
@@ -70,11 +70,11 @@ def create_distance_matrix(height, width, enemy_snakes):
     if len(enemy_snake_heads) > 0:
         for x in range(width):
             for y in range(height):
-                distance_matrix[y][x] = calculate_distance(x, y, enemy_snake_heads)
+                distance_matrix[y][x] = _calculate_distance(x, y, enemy_snake_heads)
 
     return distance_matrix
 
-def print_board(board):
+def _print_board(board):
     print('+---'*len(board)+'+')
     for row in board:
         for column in row:
@@ -89,19 +89,19 @@ def print_board(board):
 def move_process(data):
     height = data['board']['height']
     width = data['board']['width']
-    board = create_board(height, width, EMPTY)
+    board = _create_board(height, width, EMPTY)
 
     food = data['board']['food']
-    populate_food(board, food)
+    _populate_food(board, food)
     snakes = data['board']['snakes']
     you = data['you']
-    enemy_snakes, you_snake = extract_enemy_you(snakes, you)
+    enemy_snakes, you_snake = _extract_enemy_you(snakes, you)
     print('enemy: '+str(enemy_snakes))
     print('you: '+str(you_snake))
-    populate_snakes(board, enemy_snakes, you_snake)
+    _populate_snakes(board, enemy_snakes, you_snake)
 
-    distance_matrix = create_distance_matrix(height, width, enemy_snakes)
-    print_board(distance_matrix)
+    distance_matrix = _create_distance_matrix(height, width, enemy_snakes)
+    _print_board(board)
 
     return 'left'
 
