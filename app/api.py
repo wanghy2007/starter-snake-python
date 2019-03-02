@@ -6,6 +6,7 @@ YOU = 1
 FOOD = 9
 TAIL = 10
 OTHER_TAIL = 11
+DEADEND = 12
 
 UP = "up"
 DOWN = "down"
@@ -168,9 +169,9 @@ def _mark_deadend(board, height, width, snake_length):
 
     # mark
     for area in area_list:
-        if len(area) < 0.5*snake_length:
+        if len(area) < snake_length:
             for x, y in area:
-                board[y][x] = 100 + len(area)
+                board[y][x] = DEADEND + len(area)
 
 def _generate_path_list(board, height, width, head_x, head_y):
     food_path_list = []
@@ -307,11 +308,11 @@ def move_process(data):
         move_list += [[DOWN, _get_all_cell(board, height, width, head_x, head_y+1)]]
         move_list += [[LEFT, _get_all_cell(board, height, width, head_x-1, head_y)]]
         move_list += [[RIGHT, _get_all_cell(board, height, width, head_x+1, head_y)]]
-        max_cell = 0
+        max_cell = None
         for current_direction, current_cell in move_list:
             if current_cell == None:
                 continue
-            if max_cell < current_cell:
+            if max_cell == None or max_cell < current_cell:
                 direction = current_direction
                 max_cell = current_cell
 
