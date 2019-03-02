@@ -97,37 +97,77 @@ def _print_board(board):
 
 def _get_cell(board, height, width, x, y):
     if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
-        return board[y][x]
+        cell = board[y][x]
+        if cell == EMPTY or cell == FOOD:
+            return cell
     return None
 
 def _generate_food_path_list(board, height, width, head_x, head_y):
     food_path_list = []
     visited = [[False for x in range(width)] for y in range(height)]
 
-    # populate initial neighbor list
-    neighbor_list = []
+    # populate initial path list
+    path_list = []
     if _get_cell(board, height, width, head_x, head_y-1) != None:
-        neighbor_list.append([[UP], head_x, head_y-1])
+        path_list.append([[UP, head_x, head_y-1]])
     if _get_cell(board, height, width, head_x, head_y+1) != None:
-        neighbor_list.append([[DOWN], head_x, head_y+1])
+        path_list.append([[DOWN, head_x, head_y+1]])
     if _get_cell(board, height, width, head_x-1, head_y) != None:
-        neighbor_list.append([[LEFT], head_x-1, head_y])
+        path_list.append([[LEFT, head_x-1, head_y]])
     if _get_cell(board, height, width, head_x+1, head_y) != None:
-        neighbor_list.append([[RIGHT], head_x+1, head_y])
+        path_list.append([[RIGHT, head_x+1, head_y]])
 
     # visit neighbors
-    while len(neighbor_list) > 0:
-        for path, x, y in neighbor_list:
+    while len(path_list) > 0:
+        new_path_list = []
+        for path in path_list:
+            direction, x, y = path[-1]
             if _get_cell(board, height, width, x, y) == FOOD:
                 food_path_list.append(path[:])
-            if _get_cell(board, height, width, x, y-1) != None:
-                neighbor_list.append([path[:]+[UP], x, y-1])
-            if _get_cell(board, height, width, x, y+1) != None:
-                neighbor_list.append([path[:]+[DOWN], x, y+1])
-            if _get_cell(board, height, width, x-1, y) != None:
-                neighbor_list.append([path[:]+[LEFT], x-1, y])
-            if _get_cell(board, height, width, x+1, y) != None:
-                neighbor_list.append([path[:]+[RIGHT], x+1, y])
+            if _get_cell(board, height, width, x, y-1) != None and not visited[y-1][x]:
+                visited[y-1][x] = True
+                new_path_list.append(path[:]+[[UP, x, y-1]])
+            if _get_cell(board, height, width, x, y+1) != None and not visited[y+1][x]:
+                visited[y+1][x] = True
+                new_path_list.append(path[:]+[[DOWN, x, y+1]])
+            if _get_cell(board, height, width, x-1, y) != None and not visited[y][x-1]:
+                visited[y][x-1] = True
+                new_path_list.append(path[:]+[[LEFT, x-1, y]])
+            if _get_cell(board, height, width, x+1, y) != None and not visited[y][x+1]:
+                visited[y][x+1] = True
+                new_path_list.append(path[:]+[[RIGHT, x+1, y]])
+        path_list = new_path_list
+
+    return food_path_list
+
+def _find_food(board, distance_matrix, height, width, head_x, head_y):
+    food_path_list = _generate_food_path_list(board, height, width, head_x, head_y)
+    if len(food_path_list) == 0:
+        return None
+    if len(food_path_list) == 1:
+        direction, x, y = food_path_list[0][0]
+        return direction
+
+    # find the shortest good path
+    min_path = None
+    for food_path in food_path_list:
+        is_good_path = True
+        for i in range(len(food_path)):
+            distance = i+1
+            direction, x, y = food_path[i]
+            if distance_matrix[y][x] <= distance:
+                is_good_path = False
+                break
+        if is_good_path:
+            if min_path == None:
+                min_path = food_path
+            elif len(min_path) > len(food_path):
+                min_path = food_path
+
+    if min_path != None:
+        direction, x, y = min_path[0]
+        return direction
+    return None
 
 def move_process(data):
     height = data['board']['height']
@@ -140,9 +180,15 @@ def move_process(data):
     board = _create_board(height, width, food, enemy_snakes, you_snake)
 
     distance_matrix = _create_distance_matrix(height, width, enemy_snakes)
-    _print_board(board)
+    #_print_board(distance_matrix)
 
-    return 'left'
+    head_x = you_snake['body'][0]['x']
+    head_y = you_snake['body'][0]['y']
+    direction = _find_food(board, distance_matrix, height, width, head_x, head_y)
+    if direction == None:
+        direction = LEFT
+
+    return direction
 
 def move_response(move):
     assert move in ['up', 'down', 'left', 'right'], \
