@@ -5,8 +5,7 @@ EMPTY = 0
 YOU = 1
 FOOD = 9
 TAIL = 10
-DEADEND = 11
-OTHER_TAIL = 12
+OTHER_TAIL = 11
 
 UP = "up"
 DOWN = "down"
@@ -125,7 +124,7 @@ def _get_cell(board, height, width, x, y):
 def _get_all_cell(board, height, width, x, y):
     if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
         cell = board[y][x]
-        if cell in [EMPTY, FOOD, TAIL, DEADEND, OTHER_TAIL]:
+        if cell not in range(1,9):
             return cell
     return None
 
@@ -171,7 +170,7 @@ def _mark_deadend(board, height, width, snake_length):
     for area in area_list:
         if len(area) < 0.5*snake_length:
             for x, y in area:
-                board[y][x] = DEADEND
+                board[y][x] = 100 + len(area)
 
 def _generate_path_list(board, height, width, head_x, head_y):
     food_path_list = []
@@ -302,16 +301,19 @@ def move_process(data):
         direction = _find_shortest(distance_matrix, empty_path_list)
 
     # when all else failed
-    if direction == None and _get_all_cell(board, height, width, head_x, head_y-1) != None:
-        direction = UP
-    if direction == None and _get_all_cell(board, height, width, head_x, head_y+1) != None:
-        direction = DOWN
-    if direction == None and _get_all_cell(board, height, width, head_x-1, head_y) != None:
-        direction = LEFT
-    if direction == None and _get_all_cell(board, height, width, head_x+1, head_y) != None:
-        direction = RIGHT
-
-    print direction
+    if direction == None:
+        move_list = []
+        move_list += [[UP, _get_all_cell(board, height, width, head_x, head_y-1)]]
+        move_list += [[DOWN, _get_all_cell(board, height, width, head_x, head_y+1)]]
+        move_list += [[LEFT, _get_all_cell(board, height, width, head_x-1, head_y)]]
+        move_list += [[RIGHT, _get_all_cell(board, height, width, head_x+1, head_y)]]
+        max_cell = 0
+        for current_direction, current_cell in move_list:
+            if current_cell == None:
+                continue
+            if max_cell < current_cell:
+                direction = current_direction
+                max_cell = current_cell
 
     return direction
 
