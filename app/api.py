@@ -5,6 +5,11 @@ EMPTY = 0
 YOU = 1
 FOOD = 9
 
+UP = "up"
+DOWN = "down"
+LEFT = "left"
+RIGHT = "right"
+
 def ping_response():
     return HTTPResponse(
         status=200
@@ -89,6 +94,40 @@ def _print_board(board):
                 print(' '),
         print('|')
         print('+---'*len(board)+'+')
+
+def _get_cell(board, height, width, x, y):
+    if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
+        return board[y][x]
+    return None
+
+def _generate_food_path_list(board, height, width, head_x, head_y):
+    food_path_list = []
+    visited = [[False for x in range(width)] for y in range(height)]
+
+    # populate initial neighbor list
+    neighbor_list = []
+    if _get_cell(board, height, width, head_x, head_y-1) != None:
+        neighbor_list.append([[UP], head_x, head_y-1])
+    if _get_cell(board, height, width, head_x, head_y+1) != None:
+        neighbor_list.append([[DOWN], head_x, head_y+1])
+    if _get_cell(board, height, width, head_x-1, head_y) != None:
+        neighbor_list.append([[LEFT], head_x-1, head_y])
+    if _get_cell(board, height, width, head_x+1, head_y) != None:
+        neighbor_list.append([[RIGHT], head_x+1, head_y])
+
+    # visit neighbors
+    while len(neighbor_list) > 0:
+        for path, x, y in neighbor_list:
+            if _get_cell(board, height, width, x, y) == FOOD:
+                food_path_list.append(path[:])
+            if _get_cell(board, height, width, x, y-1) != None:
+                neighbor_list.append([path[:]+[UP], x, y-1])
+            if _get_cell(board, height, width, x, y+1) != None:
+                neighbor_list.append([path[:]+[DOWN], x, y+1])
+            if _get_cell(board, height, width, x-1, y) != None:
+                neighbor_list.append([path[:]+[LEFT], x-1, y])
+            if _get_cell(board, height, width, x+1, y) != None:
+                neighbor_list.append([path[:]+[RIGHT], x+1, y])
 
 def move_process(data):
     height = data['board']['height']
