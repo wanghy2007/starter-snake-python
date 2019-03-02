@@ -216,7 +216,7 @@ def _is_tangled(head_x, head_y, you_snake):
         num_sides += 1
     if max(y_array) > head_y:
         num_sides += 1
-    return num_sides == 4
+    return num_sides >= 3
 
 def move_process(data):
     height = data['board']['height']
@@ -239,12 +239,12 @@ def move_process(data):
 
     if not _is_tangled(head_x, head_y, you_snake):
         direction = _find_shortest(distance_matrix, food_path_list)
-
-    if direction == None:
-        direction = _find_shortest(distance_matrix, tail_path_list)
-
-    #if direction == None:
-    #    direction = _find_longest(distance_matrix, empty_path_list)
+        if direction == None:
+            direction = _find_shortest(distance_matrix, tail_path_list)
+        if direction == None:
+            direction = _find_shortest(distance_matrix, empty_path_list)
+    else:
+        direction = _find_longest(distance_matrix, empty_path_list)
 
     # when all else failed
     if direction == None and _get_cell(board, height, width, head_x, head_y-1) == EMPTY:
