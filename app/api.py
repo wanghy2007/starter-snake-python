@@ -182,16 +182,16 @@ def _generate_path_list(board, height, width, head_x, head_y):
     # populate initial path list
     path_list = []
     if _get_cell(board, height, width, head_x, head_y-1) != None:
-        visited[head_x][head_y-1] = True
+        visited[head_y-1][head_x] = True
         path_list.append([[UP, head_x, head_y-1]])
     if _get_cell(board, height, width, head_x, head_y+1) != None:
-        visited[head_x][head_y+1] = True
+        visited[head_y+1][head_x] = True
         path_list.append([[DOWN, head_x, head_y+1]])
     if _get_cell(board, height, width, head_x-1, head_y) != None:
-        visited[head_x-1][head_y] = True
+        visited[head_y][head_x-1] = True
         path_list.append([[LEFT, head_x-1, head_y]])
     if _get_cell(board, height, width, head_x+1, head_y) != None:
-        visited[head_x+1][head_y] = True
+        visited[head_y][head_x+1] = True
         path_list.append([[RIGHT, head_x+1, head_y]])
 
     # visit neighbors
@@ -229,6 +229,7 @@ def _is_good_path(distance_matrix, path):
         direction, x, y = path[i]
         if distance_matrix[y][x] <= distance:
             is_good_path = False
+            break
     return is_good_path
 
 def _find_shortest(distance_matrix, path_list):
@@ -260,20 +261,6 @@ def _find_longest(distance_matrix, path_list):
         direction, x, y = max_path[0]
         return direction
     return None
-
-def _is_tangled(head_x, head_y, you_snake):
-    x_array = [coord['x'] for coord in you_snake['body']]
-    y_array = [coord['y'] for coord in you_snake['body']]
-    num_sides = 0
-    if min(x_array) < head_x:
-        num_sides += 1
-    if max(x_array) > head_x:
-        num_sides += 1
-    if min(y_array) < head_y:
-        num_sides += 1
-    if max(y_array) > head_y:
-        num_sides += 1
-    return num_sides >= 3
 
 def move_process(data):
     height = data['board']['height']
