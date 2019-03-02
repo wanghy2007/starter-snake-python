@@ -4,6 +4,7 @@ from bottle import HTTPResponse
 EMPTY = 0
 YOU = 1
 FOOD = 9
+TAIL = 10
 
 UP = "up"
 DOWN = "down"
@@ -62,6 +63,19 @@ def _create_board(height, width, food, enemy_snakes, you_snake):
         y = coord['y']
         board[y][x] = YOU
 
+    # mark around tail to avoid colliding into ourselves
+    coord = snake_body[-1]
+    x = coord['x']
+    y = coord['y']
+    if _get_cell(board, height, width, x, y-1) == EMPTY:
+        board[y-1][x] = TAIL
+    if _get_cell(board, height, width, x, y+1) == EMPTY:
+        board[y+1][x] = TAIL
+    if _get_cell(board, height, width, x-1, y) == EMPTY:
+        board[y][x-1] = TAIL
+    if _get_cell(board, height, width, x+1, y) == EMPTY:
+        board[y][x+1] = TAIL
+
     return board
 
 def _calculate_distance(x, y, enemy_snake_heads):
@@ -98,23 +112,28 @@ def _print_board(board):
 def _get_cell(board, height, width, x, y):
     if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
         cell = board[y][x]
-        if cell == EMPTY or cell == FOOD:
+        if cell in [EMPTY, FOOD, TAIL]:
             return cell
     return None
 
-def _generate_food_path_list(board, height, width, head_x, head_y):
+def _generate_path_list(board, height, width, head_x, head_y):
     food_path_list = []
+    tail_path_list = []
     visited = [[False for x in range(width)] for y in range(height)]
 
     # populate initial path list
     path_list = []
     if _get_cell(board, height, width, head_x, head_y-1) != None:
+        visited[head_x][head_y-1] = True
         path_list.append([[UP, head_x, head_y-1]])
     if _get_cell(board, height, width, head_x, head_y+1) != None:
+        visited[head_x][head_y+1] = True
         path_list.append([[DOWN, head_x, head_y+1]])
     if _get_cell(board, height, width, head_x-1, head_y) != None:
+        visited[head_x-1][head_y] = True
         path_list.append([[LEFT, head_x-1, head_y]])
     if _get_cell(board, height, width, head_x+1, head_y) != None:
+        visited[head_x+1][head_y] = True
         path_list.append([[RIGHT, head_x+1, head_y]])
 
     # visit neighbors
@@ -122,8 +141,11 @@ def _generate_food_path_list(board, height, width, head_x, head_y):
         new_path_list = []
         for path in path_list:
             direction, x, y = path[-1]
-            if _get_cell(board, height, width, x, y) == FOOD:
+            cell = _get_cell(board, height, width, x, y)
+            if cell == FOOD:
                 food_path_list.append(path[:])
+            if cell == TAIL:
+                tail_path_list.append(path[:])
             if _get_cell(board, height, width, x, y-1) != None and not visited[y-1][x]:
                 visited[y-1][x] = True
                 new_path_list.append(path[:]+[[UP, x, y-1]])
@@ -138,10 +160,9 @@ def _generate_food_path_list(board, height, width, head_x, head_y):
                 new_path_list.append(path[:]+[[RIGHT, x+1, y]])
         path_list = new_path_list
 
-    return food_path_list
+    return [food_path_list,tail_path_list]
 
-def _find_food(board, distance_matrix, height, width, head_x, head_y):
-    food_path_list = _generate_food_path_list(board, height, width, head_x, head_y)
+def _find_food(board, distance_matrix, food_path_list):
     if len(food_path_list) == 0:
         return None
     if len(food_path_list) == 1:
@@ -169,6 +190,12 @@ def _find_food(board, distance_matrix, height, width, head_x, head_y):
         return direction
     return None
 
+def _find_tail(tail_path_list):
+    if len(tail_path_list) == 0:
+        return None
+    direction, x, y = tail_path_list[0][0]
+    return direction
+
 def move_process(data):
     height = data['board']['height']
     width = data['board']['width']
@@ -184,9 +211,22 @@ def move_process(data):
 
     head_x = you_snake['body'][0]['x']
     head_y = you_snake['body'][0]['y']
-    direction = _find_food(board, distance_matrix, height, width, head_x, head_y)
+    food_path_list, tail_path_list = _generate_path_list(board, height, width, head_x, head_y)
+
+    direction = _find_food(board, distance_matrix, food_path_list)
+
     if direction == None:
+        direction = _find_tail(tail_path_list)
+
+    # when all else failed
+    if direction == None and _get_cell(board, height, width, head_x, head_y-1):
+        direction = UP
+    if direction == None and _get_cell(board, height, width, head_x, head_y+1):
+        direction = DOWN
+    if direction == None and _get_cell(board, height, width, head_x-1, head_y):
         direction = LEFT
+    if direction == None and _get_cell(board, height, width, head_x+1, head_y):
+        direction = RIGHT
 
     return direction
 
