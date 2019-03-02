@@ -165,48 +165,39 @@ def _generate_path_list(board, height, width, head_x, head_y):
 
     return [food_path_list,tail_path_list,empty_path_list]
 
-def _find_food(board, distance_matrix, food_path_list):
-    if len(food_path_list) == 0:
-        return None
-    if len(food_path_list) == 1:
-        direction, x, y = food_path_list[0][0]
-        return direction
+def _is_good_path(distance_matrix, path):
+    is_good_path = True
+    for i in range(len(path)):
+        distance = i+1
+        direction, x, y = path[i]
+        if distance_matrix[y][x] <= distance:
+            is_good_path = False
+    return is_good_path
 
+def _find_shortest(distance_matrix, path_list):
     # find the shortest good path
     min_path = None
-    for food_path in food_path_list:
-        is_good_path = True
-        for i in range(len(food_path)):
-            distance = i+1
-            direction, x, y = food_path[i]
-            if distance_matrix[y][x] <= distance:
-                is_good_path = False
-                break
-        if is_good_path:
+    for path in path_list:
+        if _is_good_path(distance_matrix, path):
             if min_path == None:
-                min_path = food_path
-            elif len(min_path) > len(food_path):
-                min_path = food_path
+                min_path = path
+            elif len(min_path) > len(path):
+                min_path = path
 
     if min_path != None:
         direction, x, y = min_path[0]
         return direction
     return None
 
-def _find_tail(tail_path_list):
-    if len(tail_path_list) == 0:
-        return None
-    direction, x, y = tail_path_list[0][0]
-    return direction
-
-def _find_empty(empty_path_list):
-    # find the longest path
+def _find_longest(distance_matrix, path_list):
+    # find the longest good path
     max_path = None
-    for empty_path in empty_path_list:
-        if max_path == None:
-            max_path = empty_path
-        elif len(max_path) < len(empty_path):
-            max_path = empty_path
+    for path in path_list:
+        if _is_good_path(distance_matrix, path):
+            if max_path == None:
+                max_path = path
+            elif len(max_path) < len(path):
+                max_path = path
 
     if max_path != None:
         direction, x, y = max_path[0]
@@ -247,23 +238,25 @@ def move_process(data):
     direction = None
 
     if not _is_tangled(head_x, head_y, you_snake):
-        direction = _find_food(board, distance_matrix, food_path_list)
+        direction = _find_shortest(distance_matrix, food_path_list)
 
     if direction == None:
-        direction = _find_tail(tail_path_list)
+        direction = _find_shortest(distance_matrix, tail_path_list)
 
     #if direction == None:
-    #    direction = _find_empty(empty_path_list)
+    #    direction = _find_longest(distance_matrix, empty_path_list)
 
     # when all else failed
-    if direction == None and _get_cell(board, height, width, head_x, head_y-1):
+    if direction == None and _get_cell(board, height, width, head_x, head_y-1) == EMPTY:
         direction = UP
-    if direction == None and _get_cell(board, height, width, head_x, head_y+1):
+    if direction == None and _get_cell(board, height, width, head_x, head_y+1) == EMPTY:
         direction = DOWN
-    if direction == None and _get_cell(board, height, width, head_x-1, head_y):
+    if direction == None and _get_cell(board, height, width, head_x-1, head_y) == EMPTY:
         direction = LEFT
-    if direction == None and _get_cell(board, height, width, head_x+1, head_y):
+    if direction == None and _get_cell(board, height, width, head_x+1, head_y) == EMPTY:
         direction = RIGHT
+
+    print direction
 
     return direction
 
