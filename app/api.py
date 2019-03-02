@@ -5,6 +5,7 @@ EMPTY = 0
 YOU = 1
 FOOD = 9
 TAIL = 10
+DEADEND = 11
 
 UP = "up"
 DOWN = "down"
@@ -115,6 +116,50 @@ def _get_cell(board, height, width, x, y):
         if cell in [EMPTY, FOOD, TAIL]:
             return cell
     return None
+
+def _mark_deadend(board, height, width, snake_length):
+    area_list = []
+    visited = [[False for x in range(width)] for y in range(height)]
+
+    # sweep
+    area = []
+    for x in range(width):
+        for y in range(height):
+            if visited[y][x]:
+                continue
+            visited[y][x] = True
+            if _get_cell(board, height, width, x, y) == None:
+                continue
+            area.append([x,y])
+            neighbor_list = [[x,y]]
+            while len(neighbor_list) > 0:
+                new_neighbor_list = []
+                for x, y in neighbor_list:
+                    if _get_cell(board, height, width, x, y-1) != None and not visited[y-1][x]:
+                        visited[y-1][x] = True
+                        area.append([x,y-1])
+                        new_neighbor_list.append([x,y-1])
+                    if _get_cell(board, height, width, x, y+1) != None and not visited[y+1][x]:
+                        visited[y+1][x] = True
+                        area.append([x,y+1])
+                        new_neighbor_list.append([x,y+1])
+                    if _get_cell(board, height, width, x-1, y) != None and not visited[y][x-1]:
+                        visited[y][x-1] = True
+                        area.append([x-1,y])
+                        new_neighbor_list.append([x-1,y])
+                    if _get_cell(board, height, width, x+1, y) != None and not visited[y][x+1]:
+                        visited[y][x+1] = True
+                        area.append([x+1,y])
+                        new_neighbor_list.append([x+1,y])
+                neighbor_list = new_neighbor_list
+            area_list.append(area)
+            area = []
+
+    # mark
+    for area in area_list:
+        if len(area) < 0.5*snake_length:
+            for x, y in area:
+                board[y][x] = DEADEND
 
 def _generate_path_list(board, height, width, head_x, head_y):
     food_path_list = []
@@ -233,18 +278,16 @@ def move_process(data):
 
     head_x = you_snake['body'][0]['x']
     head_y = you_snake['body'][0]['y']
+    _mark_deadend(board, height, width, len(you_snake['body']))
     food_path_list, tail_path_list, empty_path_list = _generate_path_list(board, height, width, head_x, head_y)
 
     direction = None
 
-    if not _is_tangled(head_x, head_y, you_snake):
-        direction = _find_shortest(distance_matrix, food_path_list)
-        if direction == None:
-            direction = _find_shortest(distance_matrix, tail_path_list)
-        if direction == None:
-            direction = _find_shortest(distance_matrix, empty_path_list)
-    else:
-        direction = _find_longest(distance_matrix, empty_path_list)
+    direction = _find_shortest(distance_matrix, food_path_list)
+    if direction == None:
+        direction = _find_shortest(distance_matrix, tail_path_list)
+    if direction == None:
+        direction = _find_shortest(distance_matrix, empty_path_list)
 
     # when all else failed
     if direction == None and _get_cell(board, height, width, head_x, head_y-1) == EMPTY:
