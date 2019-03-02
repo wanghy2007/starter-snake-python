@@ -6,6 +6,7 @@ YOU = 1
 FOOD = 9
 TAIL = 10
 DEADEND = 11
+OTHER_TAIL = 12
 
 UP = "up"
 DOWN = "down"
@@ -56,6 +57,10 @@ def _create_board(height, width, food, enemy_snakes, you_snake):
             x = coord['x']
             y = coord['y']
             board[y][x] = snake_value
+        coord = snake_body[-1]
+        x = coord['x']
+        y = coord['y']
+        board[y][x] = OTHER_TAIL
 
     # populate you snake
     snake_body = you_snake['body']
@@ -114,6 +119,13 @@ def _get_cell(board, height, width, x, y):
     if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
         cell = board[y][x]
         if cell in [EMPTY, FOOD, TAIL]:
+            return cell
+    return None
+
+def _get_all_cell(board, height, width, x, y):
+    if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
+        cell = board[y][x]
+        if cell in [EMPTY, FOOD, TAIL, DEADEND, OTHER_TAIL]:
             return cell
     return None
 
@@ -290,13 +302,13 @@ def move_process(data):
         direction = _find_shortest(distance_matrix, empty_path_list)
 
     # when all else failed
-    if direction == None and _get_cell(board, height, width, head_x, head_y-1) == EMPTY:
+    if direction == None and _get_all_cell(board, height, width, head_x, head_y-1) != None:
         direction = UP
-    if direction == None and _get_cell(board, height, width, head_x, head_y+1) == EMPTY:
+    if direction == None and _get_all_cell(board, height, width, head_x, head_y+1) != None:
         direction = DOWN
-    if direction == None and _get_cell(board, height, width, head_x-1, head_y) == EMPTY:
+    if direction == None and _get_all_cell(board, height, width, head_x-1, head_y) != None:
         direction = LEFT
-    if direction == None and _get_cell(board, height, width, head_x+1, head_y) == EMPTY:
+    if direction == None and _get_all_cell(board, height, width, head_x+1, head_y) != None:
         direction = RIGHT
 
     print direction
