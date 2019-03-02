@@ -119,6 +119,7 @@ def _get_cell(board, height, width, x, y):
 def _generate_path_list(board, height, width, head_x, head_y):
     food_path_list = []
     tail_path_list = []
+    empty_path_list = []
     visited = [[False for x in range(width)] for y in range(height)]
 
     # populate initial path list
@@ -146,6 +147,8 @@ def _generate_path_list(board, height, width, head_x, head_y):
                 food_path_list.append(path[:])
             if cell == TAIL:
                 tail_path_list.append(path[:])
+            if cell == EMPTY:
+                empty_path_list.append(path[:])
             if _get_cell(board, height, width, x, y-1) != None and not visited[y-1][x]:
                 visited[y-1][x] = True
                 new_path_list.append(path[:]+[[UP, x, y-1]])
@@ -160,7 +163,7 @@ def _generate_path_list(board, height, width, head_x, head_y):
                 new_path_list.append(path[:]+[[RIGHT, x+1, y]])
         path_list = new_path_list
 
-    return [food_path_list,tail_path_list]
+    return [food_path_list,tail_path_list,empty_path_list]
 
 def _find_food(board, distance_matrix, food_path_list):
     if len(food_path_list) == 0:
@@ -196,6 +199,34 @@ def _find_tail(tail_path_list):
     direction, x, y = tail_path_list[0][0]
     return direction
 
+def _find_empty(empty_path_list):
+    # find the longest path
+    max_path = None
+    for empty_path in empty_path_list:
+        if max_path == None:
+            max_path = empty_path
+        elif len(max_path) < len(empty_path):
+            max_path = empty_path
+
+    if max_path != None:
+        direction, x, y = max_path[0]
+        return direction
+    return None
+
+def _is_tangled(head_x, head_y, you_snake):
+    x_array = [coord['x'] for coord in you_snake['body']]
+    y_array = [coord['y'] for coord in you_snake['body']]
+    num_sides = 0
+    if min(x_array) < head_x:
+        num_sides += 1
+    if max(x_array) > head_x:
+        num_sides += 1
+    if min(y_array) < head_y:
+        num_sides += 1
+    if max(y_array) > head_y:
+        num_sides += 1
+    return num_sides == 4
+
 def move_process(data):
     height = data['board']['height']
     width = data['board']['width']
@@ -211,12 +242,18 @@ def move_process(data):
 
     head_x = you_snake['body'][0]['x']
     head_y = you_snake['body'][0]['y']
-    food_path_list, tail_path_list = _generate_path_list(board, height, width, head_x, head_y)
+    food_path_list, tail_path_list, empty_path_list = _generate_path_list(board, height, width, head_x, head_y)
 
-    direction = _find_food(board, distance_matrix, food_path_list)
+    direction = None
+
+    if not _is_tangled(head_x, head_y, you_snake):
+        direction = _find_food(board, distance_matrix, food_path_list)
 
     if direction == None:
         direction = _find_tail(tail_path_list)
+
+    #if direction == None:
+    #    direction = _find_empty(empty_path_list)
 
     # when all else failed
     if direction == None and _get_cell(board, height, width, head_x, head_y-1):
