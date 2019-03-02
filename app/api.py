@@ -103,7 +103,7 @@ def _create_distance_matrix(height, width, enemy_snakes):
     return distance_matrix
 
 def _print_board(board):
-    print('+---'*len(board)+'+')
+    print('+---'*len(board[0])+'+')
     for row in board:
         for column in row:
             print('|'),
@@ -112,7 +112,7 @@ def _print_board(board):
             else:
                 print(' '),
         print('|')
-        print('+---'*len(board)+'+')
+        print('+---'*len(board[0])+'+')
 
 def _get_cell(board, height, width, x, y):
     if 0 <= x and x <= width-1 and 0 <= y and y <= height-1:
